@@ -374,12 +374,13 @@ query_source_images() {
     NAMESPACES=$(curl -sf -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/namespaces/ | jq -r '.namespaces|.[]') || catch_error "curl => API failure"
 
     # verify NAMESPACE is in NAMESPACES to ensure proper access; abort if incorrect access
-    if ! echo ${NAMESPACES} | grep -w ${NAMESPACE} > /dev/null 2>&1
-    then
-      catch_error "The Docker Hub user ${BOLD}${DOCKER_HUB_USERNAME}${CLEAR} does not have permission to access ${BOLD}${NAMESPACE}${CLEAR}; aborting"
-    fi
 
-    # check to see if a filter pattern was provided, create a list of all repositories for the given namespace
+#    if ! echo ${NAMESPACES} | grep -w ${NAMESPACE} > /dev/null 2>&1
+#    then
+#      catch_error "The Docker Hub user ${BOLD}${DOCKER_HUB_USERNAME}${CLEAR} does not have permission to access ${BOLD}${NAMESPACE}${CLEAR}; aborting"
+#    fi
+
+    # check to see if a filter pattern was provided, create a list of all repositories for the given namespaced
     if [ -z "${V1_REPO_FILTER}" ]
     then
       # set page URL to start with
@@ -612,6 +613,7 @@ check_registry_swap_or_retag() {
     echo -e "\n${INFO} Retagging all images from '${V1_REGISTRY}' to '${V2_REGISTRY}'"
     for i in ${FULL_IMAGE_LIST}
     do
+      echo "${TASK_ID}:${VERSION}"
       retag_image "${V1_REGISTRY}/${i}" "${V2_REGISTRY}/${TASK_ID}:${VERSION}" ${COUNT_RETAG} ${LEN_FULL_IMAGE_LIST}
       COUNT_RETAG=$[$COUNT_RETAG+1]
     done
