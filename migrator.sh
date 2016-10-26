@@ -653,8 +653,11 @@ verify_v2_ready() {
 push_images_to_v2() {
   # if using ECR, create repositories before pushing
   if [ "${AWS_ECR}" == "true" ]; then
-    # create ECR repository
-    aws ecr create-repository --region ${AWS_REGION} --repository-name ${TASK_ID}
+  for i in ${REPO_LIST}
+    do
+      # create ECR repository
+      aws ecr create-repository --region ${AWS_REGION} --repository-name ${TASK_ID}
+    done
   fi
 
   # initialize variable for counting
@@ -662,8 +665,11 @@ push_images_to_v2() {
   LEN_FULL_IMAGE_LIST=$(count_list ${FULL_IMAGE_LIST})
 
   echo -e "\n${INFO} Pushing all images to ${V2_REGISTRY}"
-  push_pull_image "push" "${V2_REGISTRY}/${TASK_ID}:${VERSION}" ${COUNT_PUSH} ${LEN_FULL_IMAGE_LIST}
-  COUNT_PUSH=$[$COUNT_PUSH+1]
+  for i in ${FULL_IMAGE_LIST}
+  do
+    push_pull_image "push" "${V2_REGISTRY}/${TASK_ID}:${VERSION}" ${COUNT_PUSH} ${LEN_FULL_IMAGE_LIST}
+    COUNT_PUSH=$[$COUNT_PUSH+1]
+  done
   echo -e "${OK} Successfully pushed all images to ${V2_REGISTRY}"
 }
 
