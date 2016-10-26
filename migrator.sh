@@ -453,7 +453,7 @@ query_source_images() {
             # add each tag to list
             FULL_IMAGE_LIST="${FULL_IMAGE_LIST} ${NAMESPACE}/${i}:${j}"
           else
-	    # if tag filter, check for a match
+	        # if tag filter, check for a match
             if [ "$j" == "${V1_TAG_FILTER}" ]
             then
               # add each tag to list
@@ -565,8 +565,8 @@ retag_image() {
   fi
 
   # retag image
-  echo -e "${INFO} Retagging ${V1_REGISTRY}/${i} to ${V2_REGISTRY}/${i} ${MIG_STATUS}"
-  (docker tag -f ${SOURCE_IMAGE} ${DESTINATION_IMAGE} && echo -e "${OK} Successfully retagged ${V1_REGISTRY}/${i} to ${V2_REGISTRY}/${i}\n") || catch_retag_error "${SOURCE_IMAGE}" "${DESTINATION_IMAGE}" "${3}" "${4}"
+  echo -e "${INFO} Retagging ${V1_REGISTRY}/${i} to ${DESTINATION_IMAGE} ${MIG_STATUS}"
+  (docker tag -f ${SOURCE_IMAGE} ${DESTINATION_IMAGE} && echo -e "${OK} Successfully retagged ${V1_REGISTRY}/${i} to ${DESTINATION_IMAGE}\n") || catch_retag_error "${SOURCE_IMAGE}" "${DESTINATION_IMAGE}" "${3}" "${4}"
 }
 
 # remove image
@@ -612,7 +612,7 @@ check_registry_swap_or_retag() {
     echo -e "\n${INFO} Retagging all images from '${V1_REGISTRY}' to '${V2_REGISTRY}'"
     for i in ${FULL_IMAGE_LIST}
     do
-      retag_image "${V1_REGISTRY}/${i}" "${V2_REGISTRY}/${i}" ${COUNT_RETAG} ${LEN_FULL_IMAGE_LIST}
+      retag_image "${V1_REGISTRY}/${i}" "${V2_REGISTRY}/${TASK_ID}:${VERSION}" ${COUNT_RETAG} ${LEN_FULL_IMAGE_LIST}
       COUNT_RETAG=$[$COUNT_RETAG+1]
     done
     echo -e "${OK} Successfully retagged all images"
@@ -651,11 +651,8 @@ verify_v2_ready() {
 push_images_to_v2() {
   # if using ECR, create repositories before pushing
   if [ "${AWS_ECR}" == "true" ]; then
-    for i in ${REPO_LIST}
-    do
-      # create ECR repository
-      aws ecr create-repository --region ${AWS_REGION} --repository-name ${NAMESPACE}/${i}
-    done
+    # create ECR repository
+    aws ecr create-repository --region ${AWS_REGION} --repository-name ${TASK_ID}
   fi
 
   # initialize variable for counting
@@ -663,11 +660,8 @@ push_images_to_v2() {
   LEN_FULL_IMAGE_LIST=$(count_list ${FULL_IMAGE_LIST})
 
   echo -e "\n${INFO} Pushing all images to ${V2_REGISTRY}"
-  for i in ${FULL_IMAGE_LIST}
-  do
-    push_pull_image "push" "${V2_REGISTRY}/${i}" ${COUNT_PUSH} ${LEN_FULL_IMAGE_LIST}
-    COUNT_PUSH=$[$COUNT_PUSH+1]
-  done
+  push_pull_image "push" "${V2_REGISTRY}/${TASK_ID}:${VERSION}" ${COUNT_PUSH} ${LEN_FULL_IMAGE_LIST}
+  COUNT_PUSH=$[$COUNT_PUSH+1]
   echo -e "${OK} Successfully pushed all images to ${V2_REGISTRY}"
 }
 
@@ -746,7 +740,7 @@ cleanup_local_engine() {
     do
       # remove docker image/tags; allow failures here (in case image is actually in use)
       remove_image "${V1_REGISTRY}/${i}"
-      remove_image "${V2_REGISTRY}/${i}"
+      remove_image "${V2_REGISTRY}/${TASK_ID}:${VERSION}"
     done
   fi
   echo -e "${OK} Successfully cleaned up images from local Docker engine"
